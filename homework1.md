@@ -1,99 +1,161 @@
----
-layout: page
-title: Homework 1
-description: >-
-    Instructions for Homework 1
----
-
-# Homework 1
-{:.no_toc}
-
-## Table of contents
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
-
----
-
-**This homework is due on Thursday, September 21 at 2 PM.**
-
-[Submission Tex Template](https://github.com/daphnei/cmu-llm-class/blob/main/homework_materials/hw1_template.tex)
-You are not required to follow this template for submission, but it is here for your convenience.
-
-_(instructions last updated September 10)_
-
-# September 10 Update
-The starter code has been updated to fix a bug in Question 3.1 as noted in the Piazza.
-
-Anywhere in the homework which instructs you to use ``davinci``, you may use `davinci-002` instead, which costs 1/10 as much.
-You can see the pricing of the different models at https://openai.com/pricing.
-Just make a note in your homework of which model you are using.
-
-
-# Intro
-
-In this homework, you will explore several ways OpenAI's GPT-3 models can be used to perform NLP and NLG (natural language generation) tasks.
-You will also build an understanding of some of the limitations of large language models.
-
-You do not turn in any code for this assignment.
-Instead you will write a report discussing your observations for each question.
-Your report should have clear section headers for each question and subquestion.
-When appropriate, you should use figures and tables to support your answers.
-You should submit your report as a PDF using the Canvas homework submission form.
-
-## Getting Started with OpenAI's API
-
-We have provided you an [IPython notebook](https://github.com/daphnei/cmu-llm-class/blob/main/homework_materials/hw1_starter_code.ipynb) with starter code which you may use to solve the problems in the homework.
-The [IPython notebook](https://github.com/daphnei/cmu-llm-class/blob/main/homework_materials/hw1_starter_code.ipynb) contains a simple interface for interacting with OpenAI's models.
-Unless otherwise specified, you should use the model `davinci` in your experimentation.
-This is the last model OpenAI released which didn't have any finetuning for alignment.
-OpenAI has three other smaller model sizes you will be asked to compare against; in order from smallest to biggest these are
-``ada``, ``babbage``, and ``curie``.
-For example, to swap to ada, you would recreate the inference engine using ``engine = OpenAIEngine('ada')``.
-For the final problem in the homework, you will be asked to compare `davinci` with `text-davinci-003`, a variant of GPT-3 which was finetuned for instruction following.
-
-Note that we are choosing to use slightly older versions of GPT-3's models in this homework because there tends to be more information about how the older models were trained than there is for OpenAI's newer ones.
-
-If you feel uncomfortable creating an account with OpenAI in order to complete the homework, please email the professors at llms-11-667 @ andrew.cmu.edu, and we will help come up with an alternative arrangement for model inference. This will not affect your homework grade.
-
-## Disclaimer
-As you all know by know, 11-667 is a completely new course, and you are guinea-pigging a completely new homework!
-We have done our best to make sure all homework problems are solveable and that the LLMs will behave in a relatively predictable way.
-That being said, we are also giving you freedom to experiment and get creative with the LLM prompts you use to solve the homework problems.
-If you are struggling to get the LLM to behave in a way that allows you to answer any of the homework problems, please post on Piazza.
-Also, we would love any feedback on how to make this homework better for future students taking the class.
-
 # 1. Observing the Impact of Decoding Strategy
 
 ## 1.1 Rolling a Twenty-Sided Die
 
-In this question, you will investigate the impact of the choice of decoding strategy by examining prompts which ought to yield a relatively uniform distribution over a set of possible outcomes.
-
-Consider the task of rolling a 20-sided die.
-In the real world, you should expect that after rolling a fair 20-sided die 100 times, you will observe each possible outcome about 5 times.
-Your goal for this homework question is to understand how the choice of decoding strategy can influence how far an LLM's generations deviate from real-world assumptions.
-
-Take a look at Section 1 in the [IPython notebook](https://github.com/daphnei/cmu-llm-class/blob/main/homework_materials/hw1_starter_code.ipynb).
-It contains a prompt which rolls a D20 (aka a twenty-sided die) using a model finetuned for dialog.
-You may use the prompt provided there, or try to construct your own.
-Run the language model with the D20-rolling prompt 128 times using full random sampling (`top_p = 1.0`).
-This should give you a distribution over outcomes the LLM is capable of generating.
-
 **Analysis Questions**
-1. When using full random sampling (`top_p=1.0`), is the LLM equally likely to generate all outcomes? If not, what is your hypothesis for why this could be the case?
-2. Repeat the experiment with at least three values of `top_p` and discuss how changing the `top_p` hyperparameter effects the distribution of outcomes that get generated.
+1. **When using full random sampling (`top_p=1.0`), is the LLM equally likely to generate all outcomes? If not, what is your hypothesis for why this could be the case?**
 
-You should use plots or other visualizations of the output distributions to support your answer.
-You will be graded on the correctness and thoroughness of your responses.
+   For this question, I first tried with davinci-002 as my model and used the original prompt. However the result was not ideal. Out of all 128 responses, only one response gives a "five" which is the close to what we expected for the responses. However, the other 127 responses are just words or symbols. Below are the frequency of each unique responses.
+
+   <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910155209769.png" alt="image-20230910155209769" style="zoom:40%;" />
+
+   As we can see from the results, the response such as an empty space and "of" are common tokens that follows the ending word of the original prompt *"number"*. Since we are using the generation feature which is making prediction to the next word after the prompt, the response would seem reasonable.
+
+   When I increased the number for tokens for the response, I realized that for many of the response, there is a valid number of dice whitn the context, as a component of the sentence. So I tried the change the prompts and to do some data cleaning to the responses.
+
+   ***data clearning approaches*:**
+
+   - I realized that for some response, there is a leading empty space before the number, so I decided to change the number of tokens to 2 instead of 1. For each response, I trim it before try to convert it to number.
+   - I noticed that there is a considerable amount of response are using words to describe the number rather than using numeric representation. ("Five" instead of 5, etc.). So I create a map to make sure catch all the word representation of numbers and convert them into numberic representation.
+
+   ***Prompts and corresponding results***
+
+   - Let's roll a D20. The die shows the number (Original query)
+
+     ![image-20230910174950321](/Users/waynewang/Library/Application Support/typora-user-images/image-20230910174950321.png)
+
+     <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910175014205.png" alt="image-20230910175014205" style="zoom:40%;" />
+
+   - Let's roll a D20, which number does this die show?
+
+     ![image-20230910164831022](/Users/waynewang/Library/Application Support/typora-user-images/image-20230910164831022.png)
+
+     <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910164902099.png" alt="image-20230910164902099" style="zoom:40%;" />
+
+   - Let's roll a D20, which randomly get a number from 1 to 20, the number is?
+
+     ![image-20230910163829959](/Users/waynewang/Library/Application Support/typora-user-images/image-20230910163829959.png)
+
+     <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910164430150.png" alt="image-20230910164430150" style="zoom:40%;" />
+
+   - Let's roll a D20, the number is?
+
+     ![image-20230910165055985](/Users/waynewang/Library/Application Support/typora-user-images/image-20230910165055985.png)
+
+     <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910165142752.png" alt="image-20230910165142752" style="zoom:40%;" />
+
+     To determine whether the LLM can equally likely to generate all possible outcomes, I tried to select random number from 1 to 20 for 40 times (with the previous prompts, the number of valid response are around 40), and here are the distributions from three individual simulations:
+
+     <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910171502870.png" alt="image-20230910171502870" style="zoom:28%;" /><img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910171521795.png" alt="image-20230910171521795" style="zoom:28%;" /><img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910171558436.png" alt="image-20230910171558436" style="zoom:28%;" />
+
+     As we can see, since the sample size is small, so it's reasonable that the distribution is not as uniform as we expected with the random sampling. The distribution of the LLM's results to the original prompt and the last two prompts showed comparable distribution as the randomization we experimented. Therefore, we can conclude that the LLM has the potential to equally likely to generate all possible outcomes. However, it would take a larger amount of sampling to see if larger sample size will lead to a more uniform distribution. In addition, the probability for each outcome to be generated <u>would depend on the contextual influence of the input prompt</u>. As we can see, the first variation of prompt I tried didn't yield with too many valid response.
+
+2. **Repeat the experiment with at least three values of `top_p` and discuss how changing the `top_p` hyperparameter effects the distribution of outcomes that get generated.**
+
+   For this question, I will use three top_p values (0.2, 0.5, 0.8) with each of the previously mentioned prompts
+
+   1. Prompt: **Let's roll a D20. The die shows the number (Original query)**
+
+      - **Top_p = 0.2**
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910180140401.png" alt="image-20230910180140401" style="zoom:50%;" /> <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910180216952.png" alt="image-20230910180216952" style="zoom:50%;" />
+
+        When setting the **top_p** value set to **0.2** and **num_token** to **1**, all 128 responses are identical, which is **"of"**. It is the case because a smaller number of **top_p** will result with a narrower distribution of possible words. In our case, the word "of" is the token that has the highest probability which is equal to greater than 20%.
+
+      - **Top_p = 0.5**
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910181233416.png" alt="image-20230910181233416" style="zoom:50%;" /> 
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910181404234.png" alt="image-20230910181404234" style="zoom:40%;" />
+
+        When setting **top_p** to **0.5**, there are most valid responses from the responses. Here we used **num_token = 2** to deal with the leading empty space come before the number. Here we get more valid responses and more variation on the responded numbers. Among the 87 invalid responses, all of them start with the word **"of"**.
+
+      - **Top_p = 0.8**
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910181903361.png" alt="image-20230910181903361" style="zoom:50%;" />
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910181923904.png" alt="image-20230910181923904" style="zoom:40%;" />
+
+        
+
+        When setting **top_p** to **0.8**, the result is similar to setting the **top_p** to **1**, in terms of the percentage of valid outcomes generated, the distribution of the valid outcomes. When inspect the responses, there are more variation of the starting word for the responses rather than just number or the word **"of"**.
+
+   2. Prompt: **Let's roll a D20, which number does this die show?**
+
+      - **Top_p = 0.2**
+
+        ![image-20230910183203269](/Users/waynewang/Library/Application Support/typora-user-images/image-20230910183203269.png)
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230910183359946.png" alt="image-20230910183359946" style="zoom:40%;" />
+
+        When setting **top_p** to **0.2**, only 4 nubers: 12, 13, 14, 15 were shown in the responses. I have tried to generate the responses multiple times and the results always yield with 4 numbers and some variation to the distribution. I have a hypothesis that they have the same probability which is 0.05 (4 numbers sum up to 0.2). When I change the **top_p** to **0.1**, I consistantly got only 12 and 15 from all response, which backup my hypothesis that each number might have the same probability when chossing the range of possible words. However, it's unclear how the underlying algorithm break the ties among tokens with same probability.
+
+      - **Top_p = 0.25**
+
+        ![image-20230911011512072](/Users/waynewang/Library/Application Support/typora-user-images/image-20230911011512072.png)
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911011631472.png" alt="image-20230911011631472" style="zoom:40%;" />
+
+        When increase **top_p** to **0.25**, the responses doesn't follow the previous assumptions anymore. The number 11 is a new addition to the list of valid response. **"(dice"** is another unique response from the overall responses. 
+
+      - **Top_p = 0.3**
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911011949805.png" alt="image-20230911011949805" style="zoom: 50%;" />
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911012051062.png" alt="image-20230911012051062" style="zoom:40%;" />
+
+        When increase **top_p = 0.3**, the range of valid numbers from the responses are [10, 11, 12, 13, 14, 15]. Other responses are strings: [' (dice', ' (la', 'Okay,']. As the **top_p** value increases, more invalid responses emerges and the number of unique valid number didn't follow the previous trend identified when **top_p <= 0.2**.
+
+      - **Top_p = 0.5**
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911012735573.png" alt="image-20230911012735573" style="zoom:50%;" />
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911012715855.png" alt="image-20230911012715855" style="zoom:40%;" />
+
+        Similar observation as **top_p = 0.3** with a larger variation of the responses and more variation of invalid responses are involved.
+
+      - **Top_p = 0.8**
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911012956767.png" alt="image-20230911012956767" style="zoom:50%;" />
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911013016427.png" alt="image-20230911013016427" style="zoom:40%;" />
+
+        Similar observation as **top_p = 1**.
+
+   3. Prompt: **Let's roll a D20, which randomly get a number from 1 to 20, the number is?**
+
+      Similar observations as previous prompt.
+
+   4. Prompt: **Let's roll a D20, the number is?**
+
+      - Top_p = 0.1
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911013344464.png" alt="image-20230911013344464" style="zoom:50%;" />
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911013405048.png" alt="image-20230911013405048" style="zoom:40%;" />
+
+        With **top_p = 0.1**, all the response are consistantly being 10.
+
+      - Top_p = 0.2
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911013526330.png" alt="image-20230911013526330" style="zoom:50%;" />
+
+        <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230911013540372.png" alt="image-20230911013540372" style="zoom:40%;" />
+
+        With **top_p = 0.2**, the result are similar to observation from 2nd prompt.
+
+        #### Conclusion:
+
+        Based on the experiment with different top_p values, one obvious obversation is that lower **top_p** value will yield narrower range of possible generated responses whlie higher **top_p** value will yield more variation of responses. In addition, we can see from the previous experiment that there are certain number might have the same probability to be generated but it's not equally probable among all 20 numbers. Also, the probablities of any outcomes are affected by the prompt itself as well, as demonstrated above.
+
+   ****
 
 
 ## 1.2 Longform Generation
 
-  
 Using a prompt of your choice, instruct the language model to generate a 256-token story.
 Repeat this process three times, employing three different `top_p` values: 0.0, 0.5, and 1. Feel free to get as creative as you want with your prompt.
-  
+
 Next, prompt the language model with the opening sentence from a renowned book or speech and request it to generate 256 tokens. You can select from [this list of famous opening paragraphs](https://www.shortlist.com/lists/literatures-greatest-opening-paragraphs) or [this list of famous speeches](https://www.historyplace.com/speeches) or find your own. Do this three times with three different `top_p` values of 0.0, 0.5, and 1.
 
 You should now in total have 6 generations.
