@@ -161,9 +161,27 @@ Next, prompt the language model with the opening sentence from a renowned book o
 You should now in total have 6 generations.
 
 **Analysis Questions**
-1. For two sets of generations, discuss the impact choice of decoding strategy has on diversity in the generated stories. Compute a lexical diversity metric such as type-token ratio (the total number of unique words divided by the total number of words) to support your answer.
-2. Regarding your second prompt, did the language model generate the correct continuation of the book/speech? Provide reasoning as to why it may or may not have done so.
-3. When `top_p`=0, does adjusting the `frequency_penalty` increase the lexical diversity of the stories? Explain why or why not this is the case.
+1. **For two sets of generations, discuss the impact choice of decoding strategy has on diversity in the generated stories. Compute a lexical diversity metric such as type-token ratio (the total number of unique words divided by the total number of words) to support your answer.**
+
+   From the observation, with the first prompt, when **top_p = 0.0**, I can see that the generated passage keeps repeating a same sentence; when **top_p = 0.5**, the generated passage is repeating a short paragraph (longer sentences compared to previous one). When increasing **top_p = 1.0**, the model is able to generate a continuous story based on the give prompt and to be creative. As for the second prompt, we can see that as we increase the **top_p** value, there is higher lexical diversity. However, when we set the **top_p = 0.0**, it would give us an accurate continuation of the speech, and higher **top_p** will make the model give some random text. Especially when setting **top_p = 1.0**, no content from the speech was generated at all. We can see the trend of lexical diversity change from the TTR metric below as well.
+
+   - Result from prompt of my choice:
+
+     <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230924170305939.png" alt="image-20230924170305939" style="zoom:50%;" /><img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230924170321173.png" alt="image-20230924170321173" style="zoom:50%;" /><img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230924170338879.png" alt="image-20230924170338879" style="zoom:50%;" />
+
+   - Result from a famous speech ("I have a dream"):
+
+     <img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230924170710592.png" alt="image-20230924170710592" style="zoom:50%;" /><img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230924170734555.png" alt="image-20230924170734555" style="zoom:50%;" /><img src="/Users/waynewang/Library/Application Support/typora-user-images/image-20230924170744811.png" alt="image-20230924170744811" style="zoom:50%;" />
+
+   Here I used Type token ratio to measure the lexical diversity of the generated texts. Based on the two sets of generations, we can see that lower value of top_p would lead to lower type-token ratio which indicating less lexical diversity while higher value of top_p yields with higher type-token ratio, indicating more lexical diversity from the generated text.
+
+2. **Regarding your second prompt, did the language model generate the correct continuation of the book/speech? Provide reasoning as to why it may or may not have done so.**
+
+   Regarding the second prompt, the smaller **top_p** value would yelid with much better result in generating the correct continuation while higher **top_p** value brings too many alternative words/sentences into the generating content and did perform well on generating the speech. The reason of this is because the choice of **top_p** value, as we increase the value of **top_p**, it gives the model a larger range of possible tokens to choose, which introcuces more freedom and creativity, however, for this specific task of generate an accuracy continuation of speech, lower **top_p** is required as we want to give the model less freedom and to generate exact words that needed for the continuation of the text.
+
+1. **When `top_p`=0, does adjusting the `frequency_penalty` increase the lexical diversity of the stories? Explain why or why not this is the case.**
+
+   When I decrease the **frequency_penalty** to be lower than 0, the model is much more likely to generate repeated tokens and when I increase the frequency_penalty to be higher than 0, the model is more cautious about generating repeated works in its response. To aovid too many repeated tokens, the model actually generate less words than expected: the higher **frequency_penalty** yields with shorter responses from the model. The reason behind this is that negative value of **frequency_penalty** gives the model the incentive to generate repeated words to increase the frequency of words while with positive value **frequency_penalty**, the model will do the opposite to avoid repeated words as a way to avoid penalties.
 
 # 2. Measuring Perplexity
 Perplexity is a key metric to evaluate the quality of an LLM.
